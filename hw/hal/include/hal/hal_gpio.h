@@ -32,6 +32,9 @@
 extern "C" {
 #endif
 
+void hal_gpio_print(void);
+
+
 /**
  * The "mode" of the gpio. The gpio is either an input, output, or it is
  * "not connected" (the pin specified is not functioning as a gpio)

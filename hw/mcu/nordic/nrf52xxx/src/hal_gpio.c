@@ -25,6 +25,8 @@
 #include "nrf.h"
 #include "mcu/nrf52_hal.h"
 
+#include "console/console.h"
+
 /* XXX:
  * 1) The code probably does not handle "re-purposing" gpio very well.
  * "Re-purposing" means changing a gpio from input to output, or calling
@@ -53,6 +55,16 @@ struct hal_gpio_irq {
 };
 
 static struct hal_gpio_irq hal_gpio_irqs[HAL_GPIO_MAX_IRQ];
+
+void hal_gpio_print(void)
+{
+    for(int i = 0; i < HAL_GPIO_MAX_IRQ; i++)
+    {
+        console_printf("hal_gpio_irqs.pin[%d] \t\t= %d\n", i, hal_gpio_irqs[i].pin);
+        console_printf("hal_gpio_irqs.sense_trig[%d] \t= %d\n", i, hal_gpio_irqs[i].sense_trig);
+        console_printf("\n");
+    }
+}
 
 /**
  * gpio init in
