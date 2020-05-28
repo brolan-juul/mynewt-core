@@ -81,6 +81,9 @@ static struct da1469x_uart * const da1469x_uarts[DA1469X_UART_COUNT] = {
 #endif
 };
 
+static bool da1469x_uart_pd_en[DA1469X_UART_COUNT];
+
+
 struct da1469x_uart_baudrate {
     uint32_t baudrate;
     uint32_t cfg; /* DLH=cfg[23:16] DLL=cfg[15:8] DLF=cfg[7:0] */
@@ -376,6 +379,9 @@ hal_uart_init(int port, void *arg)
         gpiofunc[1] = MCU_GPIO_FUNC_UART_RX;
         gpiofunc[2] = 0;
         gpiofunc[3] = 0;
+
+        da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+        da1469x_uart_pd_en[0] = true;
         break;
 #endif
 #if MYNEWT_VAL(UART_1)
@@ -387,6 +393,9 @@ hal_uart_init(int port, void *arg)
         gpiofunc[1] = MCU_GPIO_FUNC_UART2_RX;
         gpiofunc[2] = MCU_GPIO_FUNC_UART2_RTSN;
         gpiofunc[3] = MCU_GPIO_FUNC_UART2_CTSN;
+
+        da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+        da1469x_uart_pd_en[1] = true;
         break;
 #endif
 #if MYNEWT_VAL(UART_2)
@@ -398,6 +407,9 @@ hal_uart_init(int port, void *arg)
         gpiofunc[1] = MCU_GPIO_FUNC_UART3_RX;
         gpiofunc[2] = MCU_GPIO_FUNC_UART3_RTSN;
         gpiofunc[3] = MCU_GPIO_FUNC_UART3_CTSN;
+
+        da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+        da1469x_uart_pd_en[2] = true;
         break;
 #endif
     default:
@@ -424,8 +436,6 @@ hal_uart_init(int port, void *arg)
     if (cfg->pin_cts >= 0) {
         mcu_gpio_set_pin_function(cfg->pin_cts, MCU_GPIO_MODE_INPUT, gpiofunc[3]);
     }
-
-    da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
 
     NVIC_DisableIRQ(irqn);
     NVIC_SetPriority(irqn, (1 << __NVIC_PRIO_BITS) - 1);
@@ -458,14 +468,26 @@ hal_uart_config(int port, int32_t baudrate, uint8_t databits, uint8_t stopbits,
     switch (port) {
     case 0:
         CRG_COM->SET_CLK_COM_REG = CRG_COM_SET_CLK_COM_REG_UART_ENABLE_Msk;
+        if (!da1469x_uart_pd_en[0]) {
+            da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+            da1469x_uart_pd_en[0] = true;
+        }
         break;
     case 1:
         CRG_COM->SET_CLK_COM_REG = CRG_COM_SET_CLK_COM_REG_UART2_ENABLE_Msk;
         CRG_COM->RESET_CLK_COM_REG = CRG_COM_SET_CLK_COM_REG_UART2_CLK_SEL_Msk;
+        if (!da1469x_uart_pd_en[1]) {
+            da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+            da1469x_uart_pd_en[1] = true;
+        }
         break;
     case 2:
         CRG_COM->SET_CLK_COM_REG = CRG_COM_SET_CLK_COM_REG_UART3_ENABLE_Msk;
         CRG_COM->RESET_CLK_COM_REG = CRG_COM_SET_CLK_COM_REG_UART3_CLK_SEL_Msk;
+        if (!da1469x_uart_pd_en[2]) {
+            da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+            da1469x_uart_pd_en[2] = true;
+        }
         break;
     default:
         assert(0);
@@ -575,12 +597,18 @@ hal_uart_close(int port)
     switch (port) {
     case 0:
         CRG_COM->RESET_CLK_COM_REG = CRG_COM_SET_CLK_COM_REG_UART_ENABLE_Msk;
+        da1469x_pd_release(MCU_PD_DOMAIN_COM);
+        da1469x_uart_pd_en[0] = false;
         break;
     case 1:
         CRG_COM->RESET_CLK_COM_REG = CRG_COM_SET_CLK_COM_REG_UART2_ENABLE_Msk;
+        da1469x_pd_release(MCU_PD_DOMAIN_COM);
+        da1469x_uart_pd_en[1] = false;
         break;
     case 2:
         CRG_COM->RESET_CLK_COM_REG = CRG_COM_SET_CLK_COM_REG_UART3_ENABLE_Msk;
+        da1469x_pd_release(MCU_PD_DOMAIN_COM);
+        da1469x_uart_pd_en[2] = false;
         break;
     default:
         assert(0);
@@ -592,6 +620,5 @@ hal_uart_close(int port)
         mcu_gpio_set_pin_function(uart->cfg->pin_rx, MCU_GPIO_MODE_INPUT,
                                   uart->rx_pin_func);
     }
-
     return 0;
 }
