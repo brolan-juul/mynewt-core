@@ -66,6 +66,9 @@ const static struct da1469x_hal_i2c *da1469x_hal_i2cs[DA1469X_HAL_I2C_MAX] = {
 #endif
 };
 
+static bool da1469x_i2c_pd_en[DA1469X_HAL_I2C_MAX];
+
+
 static const struct da1469x_hal_i2c *
 hal_i2c_resolve(uint8_t i2c_num)
 {
@@ -89,6 +92,11 @@ hal_i2c_enable(uint8_t i2c_num)
     /* This will also clear I2C_ABORT and I2C_TX_CMD_BLOCK */
     i2c->regs->I2C_ENABLE_REG = (1 << I2C_I2C_ENABLE_REG_I2C_EN_Pos);
 
+    if (!da1469x_i2c_pd_en[i2c_num]) {
+        da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+        da1469x_i2c_pd_en[i2c_num] = true;
+    }
+
     return 0;
 }
 
@@ -104,6 +112,11 @@ hal_i2c_disable(uint8_t i2c_num)
 
     i2c->regs->I2C_ENABLE_REG &= ~(1 << I2C_I2C_ENABLE_REG_I2C_EN_Pos);
 
+    if (da1469x_i2c_pd_en[i2c_num]) {
+        da1469x_pd_release(MCU_PD_DOMAIN_COM);
+        da1469x_i2c_pd_en[i2c_num] = false;
+    }
+
     return 0;
 }
 
@@ -111,8 +124,6 @@ static void
 i2c_init_hw(const struct da1469x_hal_i2c *i2c, int pin_scl, int pin_sda)
 {
     uint32_t i2c_con_reg;
-
-    da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
 
     /* Configure SCL, SDA.*/
     mcu_gpio_set_pin_function(pin_scl, MCU_GPIO_MODE_OUTPUT_OPEN_DRAIN, i2c->scl_func);
