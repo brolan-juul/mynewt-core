@@ -70,14 +70,15 @@ da1469x_sleep(os_time_t ticks)
     da1469x_pd_release_nowait(MCU_PD_DOMAIN_SYS);
 
     mcu_gpio_enter_sleep();
+    // while(1);
     ret = da1469x_m33_sleep();
     mcu_gpio_exit_sleep();
     if (!ret) {
+        // while(1);
         /* We were not sleeping, no need to apply PD_SYS settings again */
         da1469x_pd_acquire_noconf(MCU_PD_DOMAIN_SYS);
         return;
     }
-
 #if MYNEWT_VAL(MCU_DCDC_ENABLE)
     da1469x_prail_dcdc_restore();
 #endif

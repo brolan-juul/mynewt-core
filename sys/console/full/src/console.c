@@ -1242,7 +1242,7 @@ console_line_event_put(struct os_event *ev)
 
     if (rx_stalled) {
         rx_stalled = false;
-        console_rx_restart();
+        // console_rx_restart(); //nolan
     }
 }
 

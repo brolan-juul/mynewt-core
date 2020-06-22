@@ -488,13 +488,13 @@ void
 da1469x_periph_create(void)
 {
     da1469x_dma_init();
-
+    (void)da1469x_periph_create_uart;
     da1469x_periph_create_timers();
     da1469x_periph_create_adc();
     da1469x_periph_create_pwm();
     da1469x_periph_create_trng();
     da1469x_periph_create_crypto();
-    da1469x_periph_create_uart();
+    // da1469x_periph_create_uart();//nolan
     da1469x_periph_create_i2c();
     da1469x_periph_create_spi();
     da1469x_periph_create_charger();
